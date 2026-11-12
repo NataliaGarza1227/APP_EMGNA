@@ -1,0 +1,14 @@
+{
+  "name": "EMG Rehab",
+  "short_name": "EMG Rehab",
+  "description": "Monitor EMG en tiempo real para terapia de rehabilitación",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F0EEFF",
+  "theme_color": "#6C63FF",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

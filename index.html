@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="EMG Rehab">
+<meta name="theme-color" content="#FAFAF8">
+<title>EMG Rehab</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #FAFAF8;
+  --bg2:       #F0EBE3;
+  --bg3:       #E8E0D5;
+  --surface:   #FFFFFF;
+  --accent:    #C8A882;
+  --accent2:   #A8886A;
+  --sage:      #7A9E87;
+  --sage2:     #5C8068;
+  --rose:      #D4A5A5;
+  --rose2:     #B88080;
+  --lavender:  #A5A8D4;
+  --text:      #1A1A1A;
+  --text2:     #5A5A5A;
+  --text3:     #9A9A9A;
+  --border:    #E0D8CE;
+  --border2:   #D0C8BC;
+  --r-sm:      6px;
+  --r-md:      10px;
+  --r-lg:      14px;
+  box-sizing:  border-box;
+  padding-top: env(safe-area-inset-top,0px);
+  padding-bottom: env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
+html, body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; overflow-x:hidden }
+body { display:flex; flex-direction:column }
+body::before { content:''; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); background:var(--surface); z-index:101 }
+
+/* ── TOPBAR ── */
+.topbar {
+  position:fixed; top:env(safe-area-inset-top,0px); left:0; right:0;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:12px 18px; display:flex; align-items:center; justify-content:space-between;
+  z-index:100;
+}
+.logo { display:flex; align-items:center; gap:10px }
+.logo-mark {
+  width:28px; height:28px; border-radius:4px;
+  background:var(--accent); flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+}
+.logo-mark svg { width:14px; height:14px }
+.logo-text { font-size:16px; font-weight:600; color:var(--text); letter-spacing:-.2px }
+.logo-sub { font-size:11px; color:var(--text3); font-weight:400; margin-left:6px }
+.patient-chip {
+  background:var(--bg2); border:1px solid var(--border2);
+  padding:6px 12px; border-radius:var(--r-sm);
+  font-size:12px; font-weight:500; color:var(--text2);
+  cursor:pointer; transition:border-color .15s; display:flex; align-items:center; gap:6px;
+  font-family:'DM Sans',sans-serif;
+}
+.patient-chip.active { border-color:var(--accent); color:var(--accent2) }
+.patient-chip:active { opacity:.8 }
+.chip-dot { width:6px; height:6px; border-radius:50%; background:var(--border2); flex-shrink:0 }
+.patient-chip.active .chip-dot { background:var(--accent) }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position:fixed; bottom:0; left:0; right:0;
+  background:var(--surface); border-top:1px solid var(--border);
+  display:flex; padding-bottom:env(safe-area-inset-bottom,0px); z-index:100;
+}
+.nav-btn {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  gap:4px; padding:10px 4px 8px; background:none; border:none;
+  color:var(--text3); font-family:'DM Sans',sans-serif;
+  font-size:10px; font-weight:500; cursor:pointer; transition:color .12s;
+}
+.nav-btn svg { width:18px; height:18px; opacity:.5; transition:opacity .12s }
+.nav-btn.active { color:var(--accent2) }
+.nav-btn.active svg { opacity:1; stroke:var(--accent2) }
+.nav-btn.active::before {
+  content:''; position:absolute; top:0; width:28px; height:2px;
+  background:var(--accent); border-radius:0 0 2px 2px;
+}
+.nav-btn { position:relative }
+
+/* ── MAIN ── */
+.main {
+  margin-top:calc(54px + env(safe-area-inset-top,0px));
+  margin-bottom:calc(62px + env(safe-area-inset-bottom,0px));
+  flex:1; overflow-y:auto; background:var(--bg);
+}
+.pad { padding:14px 16px 0 }
+
+/* ── SCREENS ── */
+.screen { display:none }
+.screen.active { display:block; animation:fadeUp .18s ease }
+@keyframes fadeUp { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── SECTION LABEL ── */
+.section-label {
+  font-size:10px; font-weight:600; color:var(--text3);
+  letter-spacing:.8px; text-transform:uppercase; margin-bottom:8px;
+}
+
+/* ── CARD ── */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-lg); padding:16px; margin-bottom:12px;
+}
+
+/* ── CONNECTION ── */
+.conn-row { display:flex; align-items:center; gap:8px; margin-bottom:10px }
+.conn-dot { width:7px; height:7px; border-radius:50%; background:var(--rose); flex-shrink:0 }
+.conn-dot.on { background:var(--sage); animation:pulse 2s infinite }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.conn-label { font-size:13px; font-weight:500; color:var(--text2); flex:1 }
+.ws-input {
+  width:100%; background:var(--bg); border:1px solid var(--border2);
+  border-radius:var(--r-sm); padding:9px 12px; margin-bottom:8px;
+  font-family:'DM Mono',monospace; font-size:12px; font-weight:400;
+  color:var(--text); outline:none; transition:border-color .15s;
+}
+.ws-input:focus { border-color:var(--accent) }
+.ws-input::placeholder { color:var(--text3) }
+
+/* ── BUTTONS ── */
+.btn {
+  padding:9px 18px; border-radius:var(--r-sm); border:none;
+  font-family:'DM Sans',sans-serif; font-weight:500; font-size:13px;
+  cursor:pointer; transition:opacity .1s, transform .1s;
+  display:inline-flex; align-items:center; gap:6px; letter-spacing:-.1px;
+}
+.btn:active { transform:scale(.97); opacity:.85 }
+.btn-accent { background:var(--accent); color:#fff }
+.btn-sage   { background:var(--sage);   color:#fff }
+.btn-rose   { background:var(--rose);   color:#fff }
+.btn-ghost  { background:var(--bg2); color:var(--text2); border:1px solid var(--border) }
+.btn-sm     { padding:7px 14px; font-size:12px }
+.btn:disabled { opacity:.35; pointer-events:none }
+.btn-row    { display:flex; gap:8px; flex-wrap:wrap }
+
+/* ── DEMO BANNER ── */
+.demo-banner {
+  background:var(--bg2); border:1px solid var(--border2);
+  border-left:3px solid var(--accent);
+  border-radius:var(--r-sm); padding:8px 12px; margin-bottom:12px;
+  font-size:12px; font-weight:500; color:var(--text2);
+}
+
+/* ── CHART ── */
+.chart-outer {
+  position:relative; border-radius:var(--r-md); overflow:hidden;
+  border:1px solid var(--border); margin-bottom:4px;
+}
+.chart-header {
+  position:absolute; top:8px; left:10px;
+  display:flex; align-items:center; gap:5px; z-index:2;
+}
+.chart-name { font-size:11px; font-weight:500; color:var(--text3) }
+.chart-dot  { width:5px; height:5px; border-radius:50% }
+canvas { display:block; width:100%; height:110px }
+.thresh-line { position:absolute; left:0; right:0; height:1px; pointer-events:none; transition:top .08s }
+.thresh-tag {
+  position:absolute; right:8px;
+  background:var(--accent); color:#fff;
+  font-family:'DM Mono',monospace; font-size:9px; font-weight:500;
+  padding:2px 5px; border-radius:3px;
+  pointer-events:none; transform:translateY(-50%);
+}
+
+/* ── SLIDER ── */
+.slider-wrap { padding:8px 0 10px }
+.slider-row  { display:flex; align-items:center; gap:10px }
+.slider-row label { font-size:11px; font-weight:500; color:var(--text3); width:84px; flex-shrink:0 }
+input[type=range] {
+  flex:1; -webkit-appearance:none; height:3px;
+  border-radius:99px; background:var(--bg3); outline:none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:18px; height:18px; border-radius:50%;
+  background:var(--surface); border:2px solid var(--accent);
+  box-shadow:0 1px 4px rgba(0,0,0,.12); cursor:pointer;
+}
+.slider-val { font-family:'DM Mono',monospace; font-weight:500; font-size:13px; color:var(--text2); width:36px; text-align:right }
+
+/* ── GAUGES ── */
+.gauge-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px }
+.gauge {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-lg); padding:14px 14px 12px;
+}
+.gauge-label { font-size:10px; font-weight:600; color:var(--text3); letter-spacing:.5px; text-transform:uppercase; margin-bottom:4px }
+.gauge-num   { font-family:'DM Mono',monospace; font-size:42px; font-weight:500; line-height:1; letter-spacing:-1px }
+.gauge-unit  { font-size:11px; color:var(--text3); margin-bottom:8px }
+.gauge-track { height:2px; background:var(--bg3); border-radius:99px }
+.gauge-fill  { height:100%; border-radius:99px; transition:width .1s linear }
+
+/* ── STATUS STRIP ── */
+.status-strip {
+  border:1px solid var(--border); border-radius:var(--r-md);
+  padding:12px 16px; margin-bottom:12px;
+  display:flex; align-items:center; justify-content:space-between;
+  transition:background .15s, border-color .15s;
+}
+.status-strip.on { background:color-mix(in srgb,var(--sage) 10%,transparent); border-color:var(--sage2) }
+.status-left { display:flex; align-items:center; gap:10px }
+.status-bar  { width:3px; height:28px; border-radius:99px; background:var(--border2); transition:background .15s }
+.status-strip.on .status-bar { background:var(--sage) }
+.status-label { font-size:14px; font-weight:500; color:var(--text2) }
+.status-strip.on .status-label { color:var(--sage2) }
+.status-pct { font-family:'DM Mono',monospace; font-size:13px; color:var(--text3) }
+
+/* ── SESSION INFO ── */
+.session-active {
+  background:color-mix(in srgb,var(--accent) 8%,transparent);
+  border:1px solid var(--border2); border-left:3px solid var(--accent);
+  border-radius:var(--r-sm); padding:10px 14px; margin-bottom:10px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.session-timer { font-family:'DM Mono',monospace; font-size:22px; font-weight:500; color:var(--accent2) }
+.session-meta  { font-size:11px; color:var(--text3); text-align:right; line-height:1.5 }
+
+/* ── CALIB ── */
+.calib-live {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:var(--r-lg); padding:24px 16px; text-align:center; margin-bottom:14px;
+}
+.calib-num  { font-family:'DM Mono',monospace; font-size:72px; font-weight:400; color:var(--text); line-height:1 }
+.calib-sub  { font-size:11px; color:var(--text3); margin-top:4px; letter-spacing:.3px }
+.ring-wrap  { display:flex; flex-direction:column; align-items:center; margin:14px 0 }
+.ring-countdown { font-family:'DM Mono',monospace; font-size:26px; font-weight:500; color:var(--text2); margin-top:-58px; position:relative; z-index:1 }
+.calib-result-box {
+  background:color-mix(in srgb,var(--sage) 8%,transparent);
+  border:1px solid color-mix(in srgb,var(--sage) 30%,transparent);
+  border-radius:var(--r-lg); padding:16px; margin-top:12px;
+}
+.calib-result-label { font-size:10px; font-weight:600; color:var(--sage2); letter-spacing:.6px; text-transform:uppercase; margin-bottom:8px }
+.calib-result-num   { font-family:'DM Mono',monospace; font-size:40px; font-weight:400; text-align:center; color:var(--text) }
+.calib-result-unit  { font-size:11px; color:var(--text3); text-align:center; margin-bottom:14px }
+
+/* ── PATIENTS ── */
+.patient-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-lg); padding:14px 16px; margin-bottom:8px;
+  display:flex; align-items:center; justify-content:space-between; cursor:pointer;
+  transition:border-color .15s;
+}
+.patient-card:active { opacity:.8 }
+.patient-card.selected { border-color:var(--accent) }
+.patient-id   { font-family:'DM Mono',monospace; font-size:18px; font-weight:500; color:var(--text) }
+.patient-meta { font-size:12px; color:var(--text3); margin-top:2px }
+.active-tag {
+  font-size:10px; font-weight:600; color:var(--accent2); letter-spacing:.3px;
+  background:color-mix(in srgb,var(--accent) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);
+  padding:2px 7px; border-radius:3px; margin-left:8px;
+}
+.del-btn { background:none; border:none; color:var(--text3); cursor:pointer; padding:4px; font-size:16px; transition:color .15s }
+.del-btn:active { color:var(--rose2) }
+
+/* ── HISTORY ── */
+.chip-row { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; margin-bottom:12px }
+.chip-row::-webkit-scrollbar { display:none }
+.chip {
+  padding:5px 11px; border-radius:var(--r-sm);
+  border:1px solid var(--border2); font-size:11px; font-weight:500; color:var(--text2);
+  cursor:pointer; white-space:nowrap; flex-shrink:0; background:var(--surface);
+  font-family:'DM Mono',monospace; transition:all .12s;
+}
+.chip.on { background:var(--accent); color:#fff; border-color:var(--accent) }
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:12px }
+.stat-label { font-size:10px; font-weight:600; color:var(--text3); letter-spacing:.4px; text-transform:uppercase; margin-bottom:4px }
+.stat-num   { font-family:'DM Mono',monospace; font-size:20px; font-weight:500; color:var(--text) }
+.session-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-lg); padding:14px; margin-bottom:8px;
+}
+.session-card-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px }
+.session-pid { font-family:'DM Mono',monospace; font-size:16px; font-weight:500 }
+.session-dt  { font-size:11px; color:var(--text3) }
+.metrics-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px }
+.metric { background:var(--bg); border-radius:var(--r-sm); padding:9px 11px }
+.metric-label { font-size:10px; font-weight:500; color:var(--text3); letter-spacing:.3px }
+.metric-val   { font-family:'DM Mono',monospace; font-size:16px; font-weight:500; margin-top:2px }
+
+/* ── MODALS ── */
+.modal-backdrop {
+  position:fixed; inset:0; background:rgba(26,26,26,.4); backdrop-filter:blur(3px);
+  z-index:200; display:flex; align-items:flex-end; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+.modal-backdrop.open { opacity:1; pointer-events:all }
+.modal {
+  background:var(--surface); border-radius:14px 14px 0 0; border-top:1px solid var(--border);
+  padding:20px; width:100%; max-width:500px; max-height:85vh; overflow-y:auto;
+  transform:translateY(100%); transition:transform .25s cubic-bezier(.4,0,.2,1);
+}
+.modal-backdrop.open .modal { transform:translateY(0) }
+.modal-handle { width:32px; height:3px; background:var(--border2); border-radius:99px; margin:0 auto 16px }
+.modal-title  { font-size:17px; font-weight:600; margin-bottom:16px }
+.field-label  { display:block; font-size:11px; font-weight:600; color:var(--text3); letter-spacing:.4px; text-transform:uppercase; margin-bottom:6px }
+.field-input  {
+  width:100%; background:var(--bg); border:1px solid var(--border2);
+  border-radius:var(--r-sm); padding:10px 12px; margin-bottom:14px;
+  font-family:'DM Sans',sans-serif; font-size:14px; font-weight:400;
+  color:var(--text); outline:none; transition:border-color .15s;
+}
+.field-input:focus { border-color:var(--accent) }
+.field-input::placeholder { color:var(--text3) }
+.modal-btn-row { display:flex; gap:8px }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed; bottom:calc(70px + env(safe-area-inset-bottom,0px));
+  left:50%; transform:translateX(-50%) translateY(10px);
+  background:var(--text); color:var(--bg);
+  padding:9px 18px; border-radius:var(--r-sm);
+  font-size:12px; font-weight:500; z-index:300;
+  opacity:0; transition:opacity .2s,transform .2s; pointer-events:none; white-space:nowrap;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0) }
+
+/* ── EMPTY ── */
+.empty { text-align:center; padding:40px 20px }
+.empty-line { width:32px; height:2px; background:var(--border2); border-radius:99px; margin:0 auto 12px }
+.empty-text { font-size:13px; color:var(--text3); font-weight:400 }
+
+/* ── TITLE ROW ── */
+.title-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px }
+.title-row h2 { font-size:19px; font-weight:600 }
+
+/* scrollbar */
+::-webkit-scrollbar { width:3px; height:3px }
+::-webkit-scrollbar-track { background:transparent }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:99px }
+
+@media(max-width:360px) { .gauge-num{font-size:34px} .btn{padding:8px 13px;font-size:12px} }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round">
+        <path d="M2 10 Q4 2 7 7 Q10 12 12 4"/>
+      </svg>
+    </div>
+    <span class="logo-text">EMG Rehab</span>
+  </div>
+  <button class="patient-chip" id="topPatientBtn" onclick="openPatientSelector()">
+    <span class="chip-dot"></span>
+    <span id="topPatientLabel">Sin paciente</span>
+  </button>
+</header>
+
+<div class="toast" id="toast"></div>
+
+<main class="main">
+
+  <!-- ══ LIVE ══ -->
+  <div class="screen active" id="screen-live">
+    <div class="pad">
+      <div id="demoBanner" class="demo-banner" style="display:none">Modo simulacion</div>
+
+      <!-- Connection -->
+      <div class="card">
+        <div class="conn-row">
+          <div class="conn-dot" id="connDot"></div>
+          <span class="conn-label" id="connStatus">Desconectado</span>
+          <button class="btn btn-accent btn-sm" id="connBtn" onclick="toggleConn()">Conectar</button>
+        </div>
+        <input class="ws-input" id="wsUrl" type="text" placeholder="ws://192.168.1.100:80" value="ws://192.168.1.100:80">
+      </div>
+
+      <!-- EMG Chart -->
+      <div class="chart-outer">
+        <div class="chart-header">
+          <div class="chart-dot" style="background:var(--accent)"></div>
+          <span class="chart-name">EMG</span>
+        </div>
+        <canvas id="emgCanvas"></canvas>
+        <div class="thresh-line" id="emgTL" style="background:var(--accent2);top:50%"></div>
+        <div class="thresh-tag"  id="emgTP" style="top:50%">50%</div>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-row">
+          <label>Umbral EMG</label>
+          <input type="range" id="emgSlider" min="0" max="100" value="50" oninput="setEmgThresh(+this.value)">
+          <span class="slider-val" id="emgSliderVal">50%</span>
+        </div>
+      </div>
+
+      <!-- Flex Chart -->
+      <div class="chart-outer">
+        <div class="chart-header">
+          <div class="chart-dot" style="background:var(--lavender)"></div>
+          <span class="chart-name">Flex Sensor</span>
+        </div>
+        <canvas id="flexCanvas"></canvas>
+        <div class="thresh-line" id="flexTL" style="background:var(--accent2);top:50%"></div>
+        <div class="thresh-tag"  id="flexTP" style="top:50%">50%</div>
+      </div>
+      <div class="slider-wrap">
+        <div class="slider-row">
+          <label>Umbral Flex</label>
+          <input type="range" id="flexSlider" min="0" max="100" value="50" oninput="setFlexThresh(+this.value)">
+          <span class="slider-val" id="flexSliderVal">50%</span>
+        </div>
+      </div>
+
+      <!-- Gauges -->
+      <div class="gauge-row">
+        <div class="gauge">
+          <div class="gauge-label">MVC</div>
+          <div class="gauge-num" id="gaugeEMG" style="color:var(--text)">0</div>
+          <div class="gauge-unit">por ciento</div>
+          <div class="gauge-track"><div class="gauge-fill" id="fillEMG" style="background:var(--accent);width:0%"></div></div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-label">Flex</div>
+          <div class="gauge-num" id="gaugeFlex" style="color:var(--text)">0</div>
+          <div class="gauge-unit">por ciento</div>
+          <div class="gauge-track"><div class="gauge-fill" id="fillFlex" style="background:var(--lavender);width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- Status strip -->
+      <div class="status-strip" id="statusStrip">
+        <div class="status-left">
+          <div class="status-bar"></div>
+          <span class="status-label" id="statusLabel">En reposo</span>
+        </div>
+        <span class="status-pct" id="statusPct">0%</span>
+      </div>
+
+      <!-- Session -->
+      <div class="card">
+        <div id="sessionActiveRow" class="session-active" style="display:none">
+          <div>
+            <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:2px">Sesión activa</div>
+            <div class="session-timer" id="sessionTimerEl">00:00</div>
+          </div>
+          <div class="session-meta">Paciente<br><span style="font-weight:600;color:var(--text2)" id="sessionPatEl">—</span></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-sage"  id="startBtn" onclick="startSession()">Iniciar sesión</button>
+          <button class="btn btn-rose"  id="stopBtn"  onclick="stopSession()" disabled>Finalizar</button>
+          <button class="btn btn-ghost btn-sm" onclick="showScreen('calib')">Calibrar MVC</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CALIB ══ -->
+  <div class="screen" id="screen-calib">
+    <div class="pad">
+      <div class="card">
+        <div class="section-label">Calibración MVC</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px">
+          Pide al paciente la contracción máxima posible durante 5 segundos.
+          La app registra el valor más alto como 100% MVC.
+        </p>
+        <div class="calib-live">
+          <div class="calib-num" id="calibNum">0</div>
+          <div class="calib-sub">valor en tiempo real</div>
+        </div>
+        <div class="ring-wrap">
+          <svg width="88" height="88" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="34" fill="none" stroke="var(--bg3)" stroke-width="6"/>
+            <circle id="ringCircle" cx="40" cy="40" r="34" fill="none" stroke="var(--sage)" stroke-width="6"
+              stroke-dasharray="213.6" stroke-dashoffset="213.6"
+              stroke-linecap="round" transform="rotate(-90 40 40)"/>
+          </svg>
+          <div class="ring-countdown" id="ringNum">5</div>
+        </div>
+        <button class="btn btn-accent" id="calibBtn" onclick="startCalib()" style="width:100%;justify-content:center">
+          Capturar MVC
+        </button>
+        <div id="calibResult" style="display:none">
+          <div class="calib-result-box">
+            <div class="calib-result-label">MVC capturado</div>
+            <div class="calib-result-num" id="calibResultVal">—</div>
+            <div class="calib-result-unit">valor máximo registrado</div>
+            <div class="slider-wrap">
+              <div class="slider-row">
+                <label>Ajustar umbral</label>
+                <input type="range" id="calibAdjSlider" min="10" max="100" value="50"
+                  oninput="document.getElementById('calibAdjVal').textContent=this.value+'%'">
+                <span class="slider-val" id="calibAdjVal">50%</span>
+              </div>
+            </div>
+            <button class="btn btn-sage" onclick="applyCalib()" style="width:100%;justify-content:center">
+              Aplicar y volver
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PATIENTS ══ -->
+  <div class="screen" id="screen-patients">
+    <div class="pad">
+      <div class="title-row">
+        <h2>Pacientes</h2>
+        <button class="btn btn-accent btn-sm" onclick="openAddPatient()">+ Nuevo</button>
+      </div>
+      <div id="patientList">
+        <div class="empty"><div class="empty-line"></div><div class="empty-text">Agrega tu primer paciente</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ HISTORY ══ -->
+  <div class="screen" id="screen-history">
+    <div class="pad">
+      <div class="title-row">
+        <h2>Historial</h2>
+        <button class="btn btn-accent btn-sm" onclick="exportCSV()">Exportar CSV</button>
+      </div>
+      <div class="chip-row" id="filterChips">
+        <div class="chip on" onclick="setFilter('')">Todos</div>
+      </div>
+      <div id="statsRow" class="stats-row" style="display:none">
+        <div class="stat-card"><div class="stat-label">Sesiones</div><div class="stat-num" id="statSessions">0</div></div>
+        <div class="stat-card"><div class="stat-label">MVC prom.</div><div class="stat-num" id="statMVC" style="color:var(--accent2)">0%</div></div>
+        <div class="stat-card"><div class="stat-label">MVC máx.</div><div class="stat-num" id="statMax" style="color:var(--sage2)">0%</div></div>
+      </div>
+      <div id="sessionList">
+        <div class="empty"><div class="empty-line"></div><div class="empty-text">Sin sesiones registradas</div></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-live" onclick="showScreen('live')">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <path d="M2 13 Q5 4 10 10 Q15 16 18 7"/>
+    </svg>
+    En vivo
+  </button>
+  <button class="nav-btn" id="nav-calib" onclick="showScreen('calib')">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="10" cy="10" r="7"/>
+      <circle cx="10" cy="10" r="2.5"/>
+      <line x1="10" y1="3" x2="10" y2="1"/>
+    </svg>
+    MVC
+  </button>
+  <button class="nav-btn" id="nav-patients" onclick="showScreen('patients')">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="10" cy="7" r="3.5"/>
+      <path d="M3 18c0-3.866 3.134-7 7-7s7 3.134 7 7"/>
+    </svg>
+    Pacientes
+  </button>
+  <button class="nav-btn" id="nav-history" onclick="showScreen('history')">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="14" height="14" rx="2"/>
+      <line x1="7" y1="10" x2="7" y2="14"/>
+      <line x1="10" y1="7"  x2="10" y2="14"/>
+      <line x1="13" y1="12" x2="13" y2="14"/>
+    </svg>
+    Historial
+  </button>
+</nav>
+
+<!-- MODAL: Add Patient -->
+<div class="modal-backdrop" id="modalAdd">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nuevo paciente</div>
+    <label class="field-label">ID del paciente</label>
+    <input class="field-input" id="newId" placeholder="ej. PAC-001" maxlength="20">
+    <label class="field-label">Notas (opcional)</label>
+    <input class="field-input" id="newNotes" placeholder="ej. Hemiplejia izquierda">
+    <div class="modal-btn-row">
+      <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="closeModal('modalAdd')">Cancelar</button>
+      <button class="btn btn-accent" style="flex:1;justify-content:center" onclick="savePatient()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Select Patient -->
+<div class="modal-backdrop" id="modalSelect">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Seleccionar paciente</div>
+    <div id="selectorList"></div>
+    <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px" onclick="closeModal('modalSelect')">Cancelar</button>
+  </div>
+</div>
+
+<script>
+const S={ws:null,demo:null,demoT:0,emgThresh:50,flexThresh:50,emgCur:0,flexCur:0,patient:null,session:null,sessionTimer:null,elapsed:0,calibrating:false,calibMax:0};
+const EMG_H=new Array(160).fill(0),FLEX_H=new Array(160).fill(0);
+const DB_P='emgr_p',DB_S='emgr_s';
+const loadP=()=>{try{return JSON.parse(localStorage.getItem(DB_P)||'[]')}catch{return[]}};
+const saveP=d=>localStorage.setItem(DB_P,JSON.stringify(d));
+const loadSess=()=>{try{return JSON.parse(localStorage.getItem(DB_S)||'[]')}catch{return[]}};
+const saveSess=d=>localStorage.setItem(DB_S,JSON.stringify(d));
+
+function showScreen(n){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+n).classList.add('active');
+  document.getElementById('nav-'+n).classList.add('active');
+  if(n==='patients')renderPatients();
+  if(n==='history')renderHistory();
+}
+
+let emgCtx,flexCtx,canvW;
+function initCanvas(){
+  const ec=document.getElementById('emgCanvas'),fc=document.getElementById('flexCanvas');
+  const dpr=window.devicePixelRatio||1;
+  canvW=ec.parentElement.clientWidth;
+  [ec,fc].forEach(c=>{c.width=canvW*dpr;c.height=110*dpr;c.style.height='110px'});
+  emgCtx=ec.getContext('2d');emgCtx.scale(dpr,dpr);
+  flexCtx=fc.getContext('2d');flexCtx.scale(dpr,dpr);
+}
+function drawChart(ctx,data,color,W=canvW,H=110){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#FAFAF8';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(0,0,0,0.04)';ctx.lineWidth=1;
+  for(let i=1;i<4;i++){ctx.beginPath();ctx.moveTo(0,H*i/4);ctx.lineTo(W,H*i/4);ctx.stroke()}
+  if(data.length<2)return;
+  const step=W/(data.length-1);
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,color+'30');grad.addColorStop(1,color+'04');
+  ctx.beginPath();
+  data.forEach((v,i)=>{const x=i*step,y=H-(v/100)*H;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});
+  ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.lineJoin='round';
+  data.forEach((v,i)=>{const x=i*step,y=H-(v/100)*H;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});
+  ctx.stroke();
+}
+function updateThreshLines(){
+  const H=110;
+  const ey=H-(S.emgThresh/100)*H,fy=H-(S.flexThresh/100)*H;
+  document.getElementById('emgTL').style.top=ey+'px';
+  document.getElementById('emgTP').style.top=ey+'px';
+  document.getElementById('flexTL').style.top=fy+'px';
+  document.getElementById('flexTP').style.top=fy+'px';
+}
+function renderCharts(){if(!emgCtx)return;drawChart(emgCtx,EMG_H,'#C8A882');drawChart(flexCtx,FLEX_H,'#A5A8D4');updateThreshLines()}
+
+function pushSample(emg,flex){
+  emg=Math.min(100,Math.max(0,emg));flex=Math.min(100,Math.max(0,flex));
+  EMG_H.shift();EMG_H.push(emg);FLEX_H.shift();FLEX_H.push(flex);
+  S.emgCur=emg;S.flexCur=flex;
+  document.getElementById('gaugeEMG').textContent=Math.round(emg);
+  document.getElementById('fillEMG').style.width=emg+'%';
+  document.getElementById('gaugeFlex').textContent=Math.round(flex);
+  document.getElementById('fillFlex').style.width=flex+'%';
+  const on=emg>=S.emgThresh;
+  const strip=document.getElementById('statusStrip');
+  if(on){strip.classList.add('on');document.getElementById('statusLabel').textContent='Contraccion activa'}
+  else{strip.classList.remove('on');document.getElementById('statusLabel').textContent='En reposo'}
+  document.getElementById('statusPct').textContent=Math.round(emg)+'%';
+  if(S.calibrating){document.getElementById('calibNum').textContent=Math.round(emg);if(emg>S.calibMax)S.calibMax=emg}
+  if(S.session){if(emg>S.session.maxMVC)S.session.maxMVC=emg;if(flex>S.session.maxFlex)S.session.maxFlex=flex;S.session.sumMVC.push(emg);S.session.sumFlex.push(flex)}
+}
+
+function startDemo(){} // sin simulacion
+function stopDemo(){}
+
+function toggleConn(){
+  if(S.ws&&S.ws.readyState===WebSocket.OPEN){S.ws.close();startDemo();return}
+  const url=document.getElementById('wsUrl').value.trim();if(!url)return;
+  stopDemo();setConnUI('connecting');
+  try{
+    S.ws=new WebSocket(url);
+    S.ws.onopen=()=>{setConnUI('connected');document.getElementById('demoBanner').style.display='none';toast('Arduino conectado')};
+    S.ws.onmessage=e=>{try{const d=JSON.parse(e.data);pushSample(+d.emg||0,+d.flex||0)}catch{const p=String(e.data).split(',');if(p.length>=2)pushSample(+p[0],+p[1])}};
+    S.ws.onerror=()=>{setConnUI('error');startDemo()};
+    S.ws.onclose=()=>{setConnUI('disconnected');startDemo()};
+  }catch{setConnUI('error');startDemo()}
+}
+function setConnUI(st){
+  const m={disconnected:['','Desconectado','Conectar'],connecting:['','Conectando','...'],connected:['on','Conectado','Desconectar'],error:['','Error de conexion','Reintentar']};
+  const[cls,lbl,btn]=m[st];
+  document.getElementById('connDot').className='conn-dot'+(cls?' '+cls:'');
+  document.getElementById('connStatus').textContent=lbl;
+  document.getElementById('connBtn').textContent=btn;
+}
+
+function setEmgThresh(v){S.emgThresh=v;document.getElementById('emgSliderVal').textContent=v+'%';document.getElementById('emgTP').textContent=v+'%';updateThreshLines()}
+function setFlexThresh(v){S.flexThresh=v;document.getElementById('flexSliderVal').textContent=v+'%';document.getElementById('flexTP').textContent=v+'%';updateThreshLines()}
+
+function startCalib(){
+  S.calibrating=true;S.calibMax=0;
+  document.getElementById('calibBtn').disabled=true;
+  document.getElementById('calibResult').style.display='none';
+  const circle=document.getElementById('ringCircle'),numEl=document.getElementById('ringNum');
+  const C=213.6;let rem=5;circle.style.strokeDashoffset='0';
+  const tick=()=>{rem-=.05;numEl.textContent=Math.ceil(rem);circle.style.strokeDashoffset=Math.max(0,C*(rem/5));
+    if(rem<=0){S.calibrating=false;document.getElementById('calibBtn').disabled=false;document.getElementById('calibResultVal').textContent=Math.round(S.calibMax);document.getElementById('calibResult').style.display='block';document.getElementById('calibAdjSlider').value=50;document.getElementById('calibAdjVal').textContent='50%';circle.style.strokeDashoffset=C;numEl.textContent=5;toast('MVC capturado: '+Math.round(S.calibMax))}
+    else requestAnimationFrame(tick)};
+  requestAnimationFrame(tick);
+}
+function applyCalib(){const v=+document.getElementById('calibAdjSlider').value;setEmgThresh(v);document.getElementById('emgSlider').value=v;showScreen('live');toast('Umbral aplicado: '+v+'%')}
+
+function startSession(){
+  if(!S.patient){openPatientSelector();return}
+  S.session={start:new Date(),maxMVC:0,maxFlex:0,sumMVC:[],sumFlex:[]};S.elapsed=0;
+  document.getElementById('startBtn').disabled=true;document.getElementById('stopBtn').disabled=false;
+  document.getElementById('sessionActiveRow').style.display='flex';document.getElementById('sessionPatEl').textContent=S.patient;
+  S.sessionTimer=setInterval(()=>{S.elapsed++;const m=String(Math.floor(S.elapsed/60)).padStart(2,'0'),s=String(S.elapsed%60).padStart(2,'0');document.getElementById('sessionTimerEl').textContent=m+':'+s},1000);
+  toast('Sesion iniciada');
+}
+function stopSession(){
+  if(!S.session)return;clearInterval(S.sessionTimer);
+  const avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length*10)/10:0;
+  const now=S.session.start;
+  const rec={id:Date.now(),patientId:S.patient,date:now.toLocaleDateString('es-MX'),time:now.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}),avgMVC:avg(S.session.sumMVC),avgFlex:avg(S.session.sumFlex),maxMVC:Math.round(S.session.maxMVC*10)/10,maxFlex:Math.round(S.session.maxFlex*10)/10,dur:S.elapsed};
+  const all=loadSess();all.push(rec);saveSess(all);
+  document.getElementById('startBtn').disabled=false;document.getElementById('stopBtn').disabled=true;document.getElementById('sessionActiveRow').style.display='none';
+  S.session=null;toast('Sesion guardada');
+}
+
+function renderPatients(){
+  const list=document.getElementById('patientList'),pats=loadP();
+  if(!pats.length){list.innerHTML='<div class="empty"><div class="empty-line"></div><div class="empty-text">Agrega tu primer paciente</div></div>';return}
+  list.innerHTML=pats.map(p=>{const n=loadSess().filter(s=>s.patientId===p.id).length,act=S.patient===p.id;
+    return`<div class="patient-card${act?' selected':''}" onclick="selectPatient('${p.id}')"><div><div style="display:flex;align-items:center"><span class="patient-id">${p.id}</span>${act?'<span class="active-tag">activo</span>':''}</div><div class="patient-meta">${n} sesion${n!==1?'es':''} · ${p.notes||'sin notas'}</div></div><button class="del-btn" onclick="event.stopPropagation();delPatient('${p.id}')">&#215;</button></div>`}).join('');
+}
+function openAddPatient(){document.getElementById('newId').value='';document.getElementById('newNotes').value='';openModal('modalAdd');setTimeout(()=>document.getElementById('newId').focus(),300)}
+function savePatient(){
+  const id=document.getElementById('newId').value.trim().toUpperCase();if(!id){toast('Escribe un ID');return}
+  const pats=loadP();if(pats.find(p=>p.id===id)){toast('ID ya existe');return}
+  pats.push({id,notes:document.getElementById('newNotes').value.trim()});saveP(pats);closeModal('modalAdd');renderPatients();updateFilterChips();toast('Paciente '+id+' agregado');
+}
+function delPatient(id){if(!confirm('Eliminar '+id+'?'))return;saveP(loadP().filter(p=>p.id!==id));saveSess(loadSess().filter(s=>s.patientId!==id));if(S.patient===id){S.patient=null;updateTopBadge()}renderPatients();updateFilterChips();toast('Eliminado')}
+function selectPatient(id){S.patient=id;updateTopBadge();closeModal('modalSelect');renderPatients();showScreen('live');toast('Paciente: '+id)}
+function updateTopBadge(){const btn=document.getElementById('topPatientBtn'),lbl=document.getElementById('topPatientLabel');lbl.textContent=S.patient||'Sin paciente';btn.className='patient-chip'+(S.patient?' active':'')}
+function openPatientSelector(){
+  const pats=loadP();if(!pats.length){closeModal('modalSelect');showScreen('patients');return}
+  document.getElementById('selectorList').innerHTML=pats.map(p=>`<div class="patient-card" onclick="selectPatient('${p.id}')"><div><span class="patient-id">${p.id}</span><div class="patient-meta">${p.notes||'sin notas'}</div></div><span style="color:var(--text3);font-size:14px">&#8250;</span></div>`).join('');
+  openModal('modalSelect');
+}
+
+let currentFilter='';
+function setFilter(id){currentFilter=id;renderHistory()}
+function updateFilterChips(){
+  const pats=loadP(),row=document.getElementById('filterChips');
+  row.innerHTML=`<div class="chip${currentFilter===''?' on':''}" onclick="setFilter('')">Todos</div>`+pats.map(p=>`<div class="chip${currentFilter===p.id?' on':''}" onclick="setFilter('${p.id}')">${p.id}</div>`).join('');
+}
+function renderHistory(){
+  updateFilterChips();
+  let sess=loadSess();if(currentFilter)sess=sess.filter(s=>s.patientId===currentFilter);sess=sess.slice().reverse();
+  const sr=document.getElementById('statsRow');
+  if(sess.length){sr.style.display='grid';document.getElementById('statSessions').textContent=sess.length;document.getElementById('statMVC').textContent=Math.round(sess.reduce((a,s)=>a+s.avgMVC,0)/sess.length)+'%';document.getElementById('statMax').textContent=Math.round(Math.max(...sess.map(s=>s.maxMVC)))+'%'}else sr.style.display='none';
+  const list=document.getElementById('sessionList');
+  if(!sess.length){list.innerHTML='<div class="empty"><div class="empty-line"></div><div class="empty-text">Sin sesiones registradas</div></div>';return}
+  list.innerHTML=sess.map(s=>`<div class="session-card"><div class="session-card-header"><span class="session-pid">${s.patientId}</span><span class="session-dt">${s.date} · ${s.time}</span></div><div class="metrics-grid"><div class="metric"><div class="metric-label">% MVC</div><div class="metric-val" style="color:var(--accent2)">${s.avgMVC}%</div></div><div class="metric"><div class="metric-label">% Flex</div><div class="metric-val" style="color:var(--lavender)">${s.avgFlex}%</div></div><div class="metric"><div class="metric-label">Max Contraccion</div><div class="metric-val" style="color:var(--sage2)">${s.maxMVC}%</div></div><div class="metric"><div class="metric-label">Max Doblez</div><div class="metric-val" style="color:var(--rose2)">${s.maxFlex}%</div></div></div>${s.dur?`<div style="font-size:11px;color:var(--text3);margin-top:8px">${Math.floor(s.dur/60)}m ${s.dur%60}s</div>`:''}</div>`).join('');
+}
+
+function exportCSV(){
+  let sess=loadSess();if(currentFilter)sess=sess.filter(s=>s.patientId===currentFilter);if(!sess.length){toast('Sin datos');return}
+  const hdr=['Paciente','Fecha','Hora','Porcentaje MVC','Porcentaje Flex Sensor','Max Contraccion','Max Doblez','Duracion (s)'];
+  const rows=sess.map(s=>[s.patientId,s.date,s.time,s.avgMVC+'%',s.avgFlex+'%',s.maxMVC+'%',s.maxFlex+'%',s.dur||0]);
+  const csv='\uFEFF'+[hdr,...rows].map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`emg_${currentFilter||'todos'}_${new Date().toISOString().slice(0,10)}.csv`;a.click();toast('CSV descargado');
+}
+
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.modal-backdrop').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}));
+
+let toastT;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200)}
+
+function loop(){renderCharts();requestAnimationFrame(loop)}
+(function(){initCanvas();window.addEventListener('resize',initCanvas);startDemo();requestAnimationFrame(loop)})();
+</script>
+</body>
+</html>
